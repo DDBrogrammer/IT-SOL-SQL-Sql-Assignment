@@ -130,10 +130,10 @@ SELECT * FROM subject WHERE lesson_quantity >30 and lesson_quantity<45;
 -- 1. Cho bi?t thông tin v? m?c h?c b?ng c?a các sinh viên, g?m: Mã sinh viên, Gi?i tính, Mã
 -- khoa, M?c h?c b?ng. Trong ?ó, m?c h?c b?ng s? hi?n th? là “H?c b?ng cao” n?u giá tr?
 -- c?a h?c b?ng l?n h?n 500,000 và ng??c l?i hi?n th? là “M?c trung bình”.
-
+select id ,gender,faculty_id, case when scholarship>500000 then N'H?c b?ng cao' else N' M?c trung bình' end
 -- 2. Tính t?ng s? sinh viên c?a toàn tr??ng
+from student;
 SELECT COUNT(id) FROM student;
-
 -- 3. Tính t?ng s? sinh viên nam và t?ng s? sinh viên n?.
 SELECT gender, COUNT(id) FROM student GROUP BY gender;
 -- 4. Tính t?ng s? sinh viên t?ng khoa
@@ -217,18 +217,26 @@ where fa.name=N'Anh - V?n' or fa.name=N'V?t lý';
 select * from student st full OUTER join faculty fa on fa.id=st.faculty_id
 where fa.name=N'Anh - V?n'and st.gender=N'Nam' or fa.name=N'Tin h?c' and st.gender=N'Nam';
 -- 3. Cho bi?t sinh viên nào có ?i?m thi l?n 1 môn c? s? d? li?u cao nh?t
-select * from student st full OUTER join exam_management ex on ex.student_idid=st.id
-where fa.name=N'Anh - V?n'and st.gender=N'Nam' or fa.name=N'Tin h?c' and st.gender=N'Nam';
+select st.name,ex.mark,sub.name from student st , exam_management ex ,
+                                     subject sub
+where st.id=ex.student_id and sub.id=ex.subject_id and sub.name=N'C? s? d? li?u' and ex.mark=(select max(mark)from exam_management, subject
+                                                                                              where exam_management.subject_id=subject.id and subject.name=N'C? s? d? li?u' );
 -- 4. Cho bi?t sinh viên khoa anh v?n có tu?i l?n nh?t.
-
+select st.name,st.birthday from student st where st.birthday=
+                                                 (select min(to_char(st.birthday)) from student st, faculty fal where fal.name=N'Anh - V?n');
 -- 5. Cho bi?t khoa nào có ?ông sinh viên nh?t
-
+select student.faculty_id,faculty.name, COUNT(student.id) from student,faculty where student.faculty_id=faculty.id group by student.faculty_id, faculty.name  HAVING COUNT(student.id)=
+                                                                                                                                                                     (select max (COUNT(id)) FROM student group by faculty_id)  ;
 -- 6. Cho bi?t khoa nào có ?ông n? nh?t
-
+select student.faculty_id,faculty.name, COUNT(student.id)from student,faculty where student.faculty_id=faculty.id and student.gender=N'N?' group by student.faculty_id, faculty.name  HAVING COUNT(student.id)=
+                                                                                                                                                                                             (select max (COUNT(id)) FROM student group by faculty_id)  ;
 -- 7. Cho bi?t nh?ng sinh viên ??t ?i?m cao nh?t trong t?ng môn
-
+select sb.name,student_id, st.name,exam_management.mark from exam_management,(select MAX (mark) as max_mark,subject_id from exam_management group by subject_id)  a, subject sb ,student st
+where st.id=exam_management.student_id and exam_management.subject_id=sb.id and a.subject_id=exam_management.subject_id and exam_management.mark=a.max_mark;
 -- 8. Cho bi?t nh?ng khoa không có sinh viên h?c
-
+select * from faculty fa WHERE not EXISTS( SELECT DISTINCT* from student WHERE faculty_id= fa.id ) ;
 -- 9. Cho bi?t sinh viên ch?a thi môn c? s? d? li?u
-
+select * from student where not exists( select distinct *
+                                        from exam_management  where student.id=id and subject_id='01');
 -- 10. Cho bi?t sinh viên nào không thi l?n 1 mà có d? thi l?n 2
+select student_id,st.name from exam_management ex,student st where st.id=ex.student_id and number_of_exam_taking=2 and not EXISTS (select * FROM exam_management where number_of_exam_taking=1 and ex.student_id=exam_management.id )
